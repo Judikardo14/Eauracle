@@ -1,0 +1,17 @@
+# Secrets : ne JAMAIS commiter
+.env
+RECAP.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# Données et modèles générés localement
+data/cache/
+risk_model/modele_risque.txt
+risk_model/parametres.json
+
+# Photos de démo : droits d'auteur à vérifier avant de les publier
+data/photos_demo/*
+!data/photos_demo/.gitkeep
+!data/photos_demo/README.md

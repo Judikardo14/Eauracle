@@ -1,0 +1,8 @@
+requests
+lightgbm
+scikit-learn
+pandas
+numpy
+openai
+pillow
+meta-sam-parser
