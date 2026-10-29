@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eauracle</title>
+<style>
+:root{--fond:#eef3f4;--carte:#fff;--encre:#0d2b33;--doux:#52707a;--bord:#cfdde1;--eau:#0f766e;
+--n-faible:#2f855a;--n-moyen:#b7791f;--n-eleve:#c2410c;--n-crue_en_cours:#b42318;
+--surEau:#fff;--a-vigilance:#b7791f;--a-alerte:#c2410c;--a-urgence:#b42318;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--fond:#0a1a20;--carte:#10272f;--encre:#e4f0f2;--doux:#8fb0b8;--bord:#23434d;--eau:#5eead4;--surEau:#062a2e;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fond);color:var(--encre);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin:0;font-weight:700}
+h1{font-size:2rem;letter-spacing:-.01em}
+h2{font-size:1.35rem}h3{font-size:1.05rem;margin:0 0 8px}
+.entete{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:flex-start;padding:8px 0 16px;border-bottom:3px solid var(--eau)}
+.entete p{margin:4px 0 0;color:var(--doux);max-width:60ch}
+.langues button{font:inherit;padding:6px 12px;border:1px solid var(--bord);background:var(--carte);color:var(--encre);cursor:pointer}
+.langues button:first-child{border-radius:8px 0 0 8px}.langues button:last-child{border-radius:0 8px 8px 0;border-left:0}
+.langues button[aria-pressed=true]{background:var(--eau);color:#fff;border-color:var(--eau)}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--eau);outline-offset:2px}
+.bandeau{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.etiq{padding:4px 10px;border-radius:999px;border:1px solid var(--bord);background:var(--carte);font-size:.86rem}
+.etiq.alerte{border-color:var(--a-alerte);color:var(--a-alerte);font-weight:600}
+.resume{background:var(--carte);border-left:5px solid var(--eau);padding:12px 16px;border-radius:0 10px 10px 0;margin:8px 0 22px}
+.grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,470px),1fr));gap:18px}
+.carte{background:var(--carte);border:1px solid var(--bord);border-radius:14px;padding:18px}
+.tete{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.puce{--c:var(--doux);color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid var(--c);padding:2px 10px;border-radius:999px;font-weight:600;font-size:.88rem;white-space:nowrap}
+.jauge{position:relative;height:22px;border-radius:11px;background:color-mix(in srgb,var(--doux) 22%,transparent);overflow:hidden}
+.jauge i{position:absolute;inset:0 auto 0 0;border-radius:11px}
+.jauge b{position:absolute;top:0;bottom:0;width:2px;background:var(--encre);opacity:.55}
+.legende{display:flex;justify-content:space-between;font-size:.82rem;color:var(--doux);margin:4px 0 12px}
+.mesures{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.mesures div{background:color-mix(in srgb,var(--doux) 10%,transparent);border-radius:8px;padding:8px}
+.mesures strong{display:block;font-size:1.1rem}.mesures span{font-size:.78rem;color:var(--doux)}
+.photo{display:grid;grid-template-columns:150px 1fr;gap:12px;margin:12px 0}
+.photo img,.vide{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:color-mix(in srgb,var(--doux) 18%,transparent)}
+.vide{display:flex;align-items:center;justify-content:center;text-align:center;font-size:.8rem;color:var(--doux);padding:6px}
+.barre{height:10px;border-radius:5px;background:color-mix(in srgb,var(--doux) 22%,transparent);overflow:hidden;margin:4px 0 8px}
+.barre i{display:block;height:100%;background:var(--eau)}
+.petit{font-size:.84rem;color:var(--doux);margin:4px 0}
+ul.desc{margin:6px 0 0;padding-left:18px;font-size:.88rem}
+.alerte-msg{border:2px solid var(--c);border-radius:10px;padding:10px 12px;margin-top:10px}
+.alerte-msg p{margin:6px 0 0}
+.decision{font-size:.9rem;margin-top:10px;padding-top:10px;border-top:1px dashed var(--bord)}
+.chat{margin-top:26px}
+.onglets{display:flex;gap:6px;margin:10px 0}
+.onglets button{font:inherit;padding:6px 14px;border-radius:8px;border:1px solid var(--bord);background:var(--carte);color:var(--encre);cursor:pointer}
+.onglets button[aria-pressed=true]{background:var(--encre);color:var(--fond)}
+.fil{background:var(--carte);border:1px solid var(--bord);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:.93rem}
+.msg small{display:block;color:var(--doux);margin-bottom:2px}
+.msg.agent{align-self:flex-start;background:color-mix(in srgb,var(--eau) 14%,transparent)}
+.msg.relais{align-self:flex-end;background:color-mix(in srgb,var(--doux) 18%,transparent)}
+.msg.sys{align-self:center;max-width:100%;font-size:.82rem;color:var(--doux);text-align:center}
+.msg img{width:220px;max-width:100%;border-radius:8px;display:block;margin-top:4px}
+details{margin-top:26px;background:var(--carte);border:1px solid var(--bord);border-radius:14px;padding:12px 16px}
+summary{cursor:pointer;font-weight:600}
+.ligne{display:grid;grid-template-columns:34px 170px 1fr;gap:8px;padding:6px 0;border-top:1px solid var(--bord);font-size:.8rem}
+.ligne code{word-break:break-word;color:var(--doux)}
+footer{margin-top:26px;font-size:.84rem;color:var(--doux);max-width:80ch}
+.commande{background:var(--carte);border:1px solid var(--bord);border-radius:14px;padding:14px 16px;margin:0 0 22px}
+.commande .choix{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 0}
+.commande select{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--bord);background:var(--fond);color:var(--encre);max-width:100%}
+button.lancer{background:var(--eau);color:var(--surEau);border:0;border-radius:8px;padding:10px 20px;font:inherit;font-weight:700;cursor:pointer;margin-top:10px}
+button.lancer:disabled{opacity:.6;cursor:wait}
+.erreur{border:2px solid var(--n-crue_en_cours);color:var(--n-crue_en_cours);border-radius:10px;padding:8px 12px;margin-top:10px;font-size:.9rem}
+@media(max-width:560px){.mesures{grid-template-columns:repeat(2,1fr)}.photo{grid-template-columns:1fr}.ligne{grid-template-columns:28px 1fr}.ligne code{grid-column:1/-1}.msg{max-width:92%}}
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+<script>
+// Journal par défaut : exécution réelle de l'agent (rejeu 2002-08-04). Remplacé par journal.json s'il existe.
+const DONNEES_DEMO={meta:{date:"2002-08-04",rejeu:true,fournisseur:"baseten",modele:"meta-models/muse-spark-open-1026"},
+trace:[
+{tour:1,outil:"get_flood_risk",arguments:{zone:"Bonou"},resultat:{zone:"Bonou",date:"2002-08-04",mode:"rejeu historique",score_risque:0.724,niveau:"moyen",debit_actuel_m3s:376.6,debit_relatif_au_seuil_crue:0.58,variation_3j_relative:0.137,pluie_7j_mm:33.6,source:"GloFAS (simulé) + Open-Meteo"}},
+{tour:1,outil:"get_flood_risk",arguments:{zone:"Porto-Novo"},resultat:{zone:"Porto-Novo",date:"2002-08-04",mode:"rejeu historique",score_risque:0.949,niveau:"élevé",debit_actuel_m3s:380.1,debit_relatif_au_seuil_crue:0.56,variation_3j_relative:0.149,pluie_7j_mm:25.6,source:"GloFAS (simulé) + Open-Meteo"}},
+{tour:2,outil:"request_photos",arguments:{zone:"Bonou",raison:"Risque moyen (score 0.72) à Bonou - vérification terrain nécessaire"},resultat:{zone:"Bonou",statut:"photo_recue",chemin_photo:"Bonou_1.jpg"}},
+{tour:2,outil:"request_photos",arguments:{zone:"Porto-Novo",raison:"Risque élevé (score 0.95) à Porto-Novo - vérification terrain nécessaire"},resultat:{zone:"Porto-Novo",statut:"photo_recue",chemin_photo:"Porto-Novo_1.jpg"}},
+{tour:3,outil:"analyze_flood_photo",arguments:{chemin_photo:"Bonou_1.jpg"},resultat:{photo:"Bonou_1.jpg",part_eau_mesuree_pct:42.1,regions_detectees:1,confiance_sam:0.96,gravite:"elevee",methode:"segmentation SAM 3.1 (masques) ; seuils de gravité heuristiques",description_muse:["Eau boueuse marron couvrant toute la chaussée entre les bâtiments"]}},
+{tour:3,outil:"analyze_flood_photo",arguments:{chemin_photo:"Porto-Novo_1.jpg"},resultat:{photo:"Porto-Novo_1.jpg",part_eau_mesuree_pct:55.7,regions_detectees:1,confiance_sam:0.98,gravite:"elevee",methode:"segmentation SAM 3.1 (masques) ; seuils de gravité heuristiques",description_muse:["Chaussée entièrement recouverte d'eau boueuse brunâtre"]}},
+{tour:4,outil:"draft_alert",arguments:{zone:"Bonou",niveau:"alerte",public:"habitants"},resultat:{zone:"Bonou",niveau:"alerte",public:"habitants",message:"Alerte inondation pour la zone de Bonou. Le fleuve risque de déborder et d'inonder les habitations proches. Quittez les zones basses et mettez-vous en hauteur dès maintenant.",origine:"Muse Spark Open"}},
+{tour:4,outil:"draft_alert",arguments:{zone:"Porto-Novo",niveau:"alerte",public:"habitants"},resultat:{zone:"Porto-Novo",niveau:"alerte",public:"habitants",message:"Alerte inondation pour la zone de Porto-Novo. Une montée des eaux du bassin de l'Ouémé est possible dans votre secteur. Mettez-vous à l'abri en hauteur dès maintenant.",origine:"Muse Spark Open"}},
+{tour:5,outil:"send_alert",arguments:{zone:"Bonou"},resultat:{zone:"Bonou",statut:"envoye_simule"}},
+{tour:5,outil:"send_alert",arguments:{zone:"Porto-Novo"},resultat:{zone:"Porto-Novo",statut:"envoye_simule"}},
+{tour:6,outil:"log_decision",arguments:{zone:"Bonou"},resultat:{zone:"Bonou",justification:"Risque moyen score 0.724 (débit simulé GloFAS 376.6 m3/s, 58% seuil crue, +13.7% en 3j, pluie 33.6mm/7j) recoupé avec photo gravité élevée (42.1% eau, confiance SAM 0.96, eau boueuse chaussée submergée) => alerte habitants envoyée."}},
+{tour:6,outil:"log_decision",arguments:{zone:"Porto-Novo"},resultat:{zone:"Porto-Novo",justification:"Risque élevé score 0.949 (débit simulé GloFAS 380.1 m3/s, 56% seuil crue, +14.9% en 3j, pluie 25.6mm/7j) recoupé avec photo gravité élevée SAM 55.7% (confiance 0.98, eau à mi-mollet, Muse: moyenne) => alerte habitants envoyée, niveau urgence non retenu par prudence."}}],
+resume:"**Résumé Eauracle - 2002-08-04 (rejeu historique) :**\n- **Bonou :** risque moyen (score 0,72) confirmé par photo terrain gravité élevée (42,1% d'eau, confiance 0,96) → **alerte** envoyée aux habitants.\n- **Porto-Novo :** risque élevé (score 0,95) recoupé avec photo gravité élevée (55,7%, confiance 0,98, discordance Muse : moyenne) → **alerte** envoyée (niveau urgence non retenu par prudence)."};
+
+const SEUIL_MOYEN=0.088,SEUIL_ELEVE=0.859; // niveaux calibrés à l'entraînement ; à mettre à jour si le modèle est réentraîné
+const TEXTES={
+en:{sous:"An AI agent that watches flood risk on the Ouémé river, Benin, checks it against field photos, and drafts warnings for residents.",
+ rejeu:"Historical replay of",direct:"Today's data",reel:"Run saved by the agent",exemple:"Built-in sample run",modele:"Model",simule:"Simulated discharge data",brouillons:"Alerts are simulated drafts. A local authority must validate them.",
+ resume:"What the agent concluded",score:"Risk score",debit:"Discharge",seuil:"of flood threshold",var3j:"3-day change",pluie:"Rain, 7 days",
+ photo:"Field photo",partEau:"Water share of the image",confiance:"SAM 3.1 confidence",gravite:"Severity",aucune:"No photo received. Decision based on the score alone.",
+ sansImage:"Photo not found in app/photos",alerte:"Draft alert",langueAlerte:"Message text in French, as it would reach residents.",decision:"Agent's reasoning",
+ envoye:"Simulated send. Nothing was actually transmitted.",chat:"Conversation with the local relay",chatNote:"Simulated relay. Messages are built from the agent's real tool calls.",
+ trace:"Agent trace: every tool call",demande:"Agent asks the relay for a photo",relais:"Local relay",agent:"Eauracle agent",
+ recu:"Photo sent by the relay",mesure:"SAM 3.1 measured",d_eau:"of the image covered by water, severity",systeme:"Simulated send recorded. Awaiting validation by local authority.",
+ pied:"Discharge comes from the GloFAS simulation, not station measurements. Rain comes from Open-Meteo. Severity thresholds (10% and 30% water share) are heuristics. The risk model is one signal among others: the agent also weighs photos.",
+ lancer:"Run the agent",zonesTitre:"Zones to analyze",donnees:"Data",dateRejeu:"Replay of the August 2002 flood",dateDirect:"Today's live data",enCours:"The agent is working",dernier:"Last tool call",termine:"Run finished",echec:"The run failed",lancerNote:"Runs the real agent: Muse Spark Open on Baseten and SAM 3.1 on the Meta Model API. It takes about a minute.",vivant:"Run launched from this page",
+ niv:{faible:"Low",moyen:"Medium",eleve:"High",crue_en_cours:"Flood under way"},al:{vigilance:"Watch",alerte:"Warning",urgence:"Emergency"},gr:{faible:"low",moyenne:"medium",elevee:"high"},lang:"Language"},
+fr:{sous:"Un agent IA qui surveille le risque d'inondation de l'Ouémé au Bénin, le recoupe avec des photos de terrain et rédige des alertes pour les habitants.",
+ rejeu:"Rejeu historique du",direct:"Données du jour",reel:"Exécution enregistrée par l'agent",exemple:"Exécution d'exemple intégrée",modele:"Modèle",simule:"Débit simulé",brouillons:"Les alertes sont des brouillons simulés. Une autorité locale doit les valider.",
+ resume:"Conclusion de l'agent",score:"Score de risque",debit:"Débit",seuil:"du seuil de crue",var3j:"Variation sur 3 jours",pluie:"Pluie, 7 jours",
+ photo:"Photo de terrain",partEau:"Part d'eau dans l'image",confiance:"Confiance SAM 3.1",gravite:"Gravité",aucune:"Aucune photo reçue. Décision fondée sur le score seul.",
+ sansImage:"Photo introuvable dans app/photos",alerte:"Brouillon d'alerte",langueAlerte:"Texte en français, tel qu'il parviendrait aux habitants.",decision:"Raisonnement de l'agent",
+ envoye:"Envoi simulé. Rien n'a été réellement transmis.",chat:"Conversation avec le relais local",chatNote:"Relais simulé. Les messages sont construits à partir des vrais appels d'outils de l'agent.",
+ trace:"Trace de l'agent : chaque appel d'outil",demande:"L'agent demande une photo au relais",relais:"Relais local",agent:"Agent Eauracle",
+ recu:"Photo envoyée par le relais",mesure:"SAM 3.1 a mesuré",d_eau:"de l'image couverte d'eau, gravité",systeme:"Envoi simulé enregistré. En attente de validation par l'autorité locale.",
+ pied:"Le débit vient de la simulation GloFAS, pas de mesures de station. La pluie vient d'Open-Meteo. Les seuils de gravité (10 % et 30 % d'eau) sont des heuristiques. Le modèle de risque est un signal parmi d'autres : l'agent pèse aussi les photos.",
+ lancer:"Lancer l'agent",zonesTitre:"Zones à analyser",donnees:"Données",dateRejeu:"Rejeu de la crue d'août 2002",dateDirect:"Données du jour",enCours:"L'agent travaille",dernier:"Dernier outil appelé",termine:"Exécution terminée",echec:"L'exécution a échoué",lancerNote:"Lance le vrai agent : Muse Spark Open sur Baseten et SAM 3.1 sur la Meta Model API. Compter environ une minute.",vivant:"Exécution lancée depuis cette page",
+ niv:{faible:"Faible",moyen:"Moyen",eleve:"Élevé",crue_en_cours:"Crue en cours"},al:{vigilance:"Vigilance",alerte:"Alerte",urgence:"Urgence"},gr:{faible:"faible",moyenne:"moyenne",elevee:"élevée"},lang:"Langue"}};
+
+let langue="en",journal=DONNEES_DEMO,source="exemple",zoneChat=0;
+let apiDispo=false,enCours=false,erreurAgent=null,traceOuverte=false,signature="",minuterie=null;
+let zonesChoisies=["Bonou","Porto-Novo"],dateChoisie="2002-08-04";
+const ZONES_CHOIX=["Bonou","Porto-Novo","Adjohoun","Dangbo"];
+try{langue=localStorage.getItem("eauracle_langue")||"en"}catch(e){}
+const t=c=>TEXTES[langue][c];
+const echapper=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const normaliser=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g,"_");
+const nomFichier=c=>String(c||"").split(/[\\/]/).pop();
+const nombre=(x,d=1)=>Number(x).toLocaleString(langue==="fr"?"fr-FR":"en-US",{maximumFractionDigits:d});
+const enGras=s=>echapper(s).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/^- /gm,"• ").replace(/\n/g,"<br>");
+
+function construireZones(trace){
+ const zones=new Map();
+ const zone=n=>{if(!zones.has(n))zones.set(n,{nom:n});return zones.get(n)};
+ for(const e of trace){
+  const r=e.resultat||{},a=e.arguments||{};
+  if(e.outil==="get_flood_risk")zone(a.zone||r.zone).risque=r;
+  else if(e.outil==="request_photos")zone(a.zone||r.zone).demande={...r,raison:a.raison};
+  else if(e.outil==="analyze_flood_photo"){const f=r.photo||nomFichier(a.chemin_photo);zone(f.split("_")[0]).analyse={...r,fichier:f}}
+  else if(e.outil==="draft_alert")zone(a.zone||r.zone).brouillon=r;
+  else if(e.outil==="send_alert")zone(a.zone||r.zone).envoi=r;
+  else if(e.outil==="log_decision")zone(a.zone||r.zone).decision=r.justification;
+ }
+ return [...zones.values()];
+}
+const imageHtml=f=>`<img src="photos/${encodeURIComponent(f)}" alt="${echapper(f)}" onerror="this.outerHTML='<div class=vide>${echapper(t("sansImage"))}</div>'">`;
+
+function carteZone(z){
+ const r=z.risque||{},n=normaliser(r.niveau),a=z.analyse,b=z.brouillon,s=Number(r.score_risque||0);
+ const gr=a?normaliser(a.gravite):"";
+ const photo=a?`<div class="photo">${imageHtml(a.fichier)}<div>
+  <strong>${t("partEau")}: ${nombre(a.part_eau_mesuree_pct)}%</strong>
+  <div class="barre"><i style="width:${Math.min(100,a.part_eau_mesuree_pct)}%"></i></div>
+  <div class="petit">${t("confiance")}: ${nombre(a.confiance_sam,2)}</div>
+  <div class="petit">${t("gravite")}: <span class="puce" style="--c:var(--n-${gr==="elevee"?"eleve":gr==="moyenne"?"moyen":"faible"})">${echapper(t("gr")[gr]||a.gravite)}</span></div>
+  <ul class="desc">${(a.description_muse||[]).map(d=>`<li>${echapper(d)}</li>`).join("")}</ul></div></div>`
+  :`<p class="petit">${t("aucune")}</p>`;
+ const al=b?`<div class="alerte-msg" style="--c:var(--a-${b.niveau})"><span class="puce" style="--c:var(--a-${b.niveau})">${echapper(t("al")[b.niveau]||b.niveau)}</span>
+  <p>${echapper(b.message)}</p><div class="petit">${t("langueAlerte")} ${z.envoi?t("envoye"):""}</div></div>`:"";
+ return `<section class="carte"><div class="tete"><h2>${echapper(z.nom)}</h2><span class="puce" style="--c:var(--n-${n})">${echapper(t("niv")[n]||r.niveau)}</span></div>
+ <div class="jauge" role="img" aria-label="${t("score")} ${nombre(s,2)}"><i style="width:${Math.round(s*100)}%;background:var(--n-${n})"></i><b style="left:${SEUIL_MOYEN*100}%"></b><b style="left:${SEUIL_ELEVE*100}%"></b></div>
+ <div class="legende"><span>${t("score")}: ${nombre(s,2)}</span><span>${t("niv").moyen} ${SEUIL_MOYEN} | ${t("niv").eleve} ${SEUIL_ELEVE}</span></div>
+ <div class="mesures"><div><strong>${nombre(r.debit_actuel_m3s)} m³/s</strong><span>${t("debit")}</span></div>
+ <div><strong>${Math.round((r.debit_relatif_au_seuil_crue||0)*100)}%</strong><span>${t("seuil")}</span></div>
+ <div><strong>${r.variation_3j_relative>=0?"+":""}${nombre((r.variation_3j_relative||0)*100)}%</strong><span>${t("var3j")}</span></div>
+ <div><strong>${nombre(r.pluie_7j_mm)} mm</strong><span>${t("pluie")}</span></div></div>
+ <h3>${t("photo")}</h3>${photo}${al}
+ ${z.decision?`<div class="decision"><strong>${t("decision")}.</strong> ${echapper(z.decision)}</div>`:""}</section>`;
+}
+
+function fil(z){
+ const m=[],r=z.risque||{},a=z.analyse,b=z.brouillon;
+ if(z.demande)m.push(`<div class="msg agent"><small>${t("agent")}</small>${t("demande")}: ${echapper(z.demande.raison||"")}</div>`);
+ if(z.demande&&a)m.push(`<div class="msg relais"><small>${t("relais")}</small>${t("recu")}${imageHtml(a.fichier)}</div>`);
+ else if(z.demande)m.push(`<div class="msg relais"><small>${t("relais")}</small>${t("aucune")}</div>`);
+ if(a)m.push(`<div class="msg agent"><small>${t("agent")}</small>${t("mesure")} ${nombre(a.part_eau_mesuree_pct)}% ${t("d_eau")} ${echapper(t("gr")[normaliser(a.gravite)]||a.gravite)} (${t("confiance").toLowerCase()} ${nombre(a.confiance_sam,2)}).</div>`);
+ if(b)m.push(`<div class="msg agent"><small>${t("agent")} | ${echapper(t("al")[b.niveau]||b.niveau)}</small>${echapper(b.message)}</div>`);
+ if(z.envoi)m.push(`<div class="msg sys">${t("systeme")}</div>`);
+ if(z.decision)m.push(`<div class="msg agent"><small>${t("decision")}</small>${echapper(z.decision)}</div>`);
+ return m.join("");
+}
+
+function rendre(){
+ document.documentElement.lang=langue;
+ const zones=construireZones(journal.trace||[]);
+ if(zoneChat>=zones.length)zoneChat=0;
+ const meta=journal.meta||{};
+ const lignes=(journal.trace||[]).map(e=>`<div class="ligne"><span>${e.tour}</span><strong>${echapper(e.outil)}</strong><code>${echapper(JSON.stringify(e.arguments)).slice(0,160)} → ${echapper(JSON.stringify(e.resultat)).slice(0,240)}</code></div>`).join("");
+ document.getElementById("app").innerHTML=`
+ <div class="entete"><div><h1>Eauracle</h1><p>${t("sous")}</p></div>
+ <div class="langues" role="group" aria-label="${t("lang")}"><button aria-pressed="${langue==="en"}" onclick="changerLangue('en')">English</button><button aria-pressed="${langue==="fr"}" onclick="changerLangue('fr')">Français</button></div></div>
+ <div class="bandeau"><span class="etiq">${meta.rejeu?t("rejeu")+" "+echapper(meta.date):t("direct")}</span><span class="etiq">${t(source)}</span>
+ ${meta.modele?`<span class="etiq">${t("modele")}: ${echapper(meta.modele)}</span>`:""}<span class="etiq">${t("simule")}</span><span class="etiq alerte">${t("brouillons")}</span></div>
+ ${panneauCommande()}
+ ${journal.resume?`<div class="resume"><h3>${t("resume")}</h3>${enGras(journal.resume)}</div>`:""}
+ <div class="grille">${zones.map(carteZone).join("")}</div>
+ <section class="chat"><h2>${t("chat")}</h2><p class="petit">${t("chatNote")}</p>
+ <div class="onglets">${zones.map((z,i)=>`<button aria-pressed="${i===zoneChat}" onclick="choisirZone(${i})">${echapper(z.nom)}</button>`).join("")}</div>
+ <div class="fil">${zones[zoneChat]?fil(zones[zoneChat]):""}</div></section>
+ <details ${traceOuverte?"open":""} ontoggle="traceOuverte=this.open"><summary>${t("trace")}</summary>${lignes}</details>
+ <footer>${t("pied")}</footer>`;
+}
+function changerLangue(l){langue=l;try{localStorage.setItem("eauracle_langue",l)}catch(e){}rendre()}
+function choisirZone(i){zoneChat=i;rendre()}
+
+function panneauCommande(){
+ if(!apiDispo)return "";
+ const dernier=(journal.trace||[]).slice(-1)[0];
+ return `<section class="commande"><h3>${t("lancer")}</h3>
+ <div>${t("zonesTitre")}</div><div class="choix">${ZONES_CHOIX.map(z=>`<label><input type="checkbox" value="${z}" ${zonesChoisies.includes(z)?"checked":""} ${enCours?"disabled":""} onchange="majZones()"> ${z}</label>`).join("")}</div>
+ <label>${t("donnees")} <select ${enCours?"disabled":""} onchange="dateChoisie=this.value"><option value="2002-08-04" ${dateChoisie?"selected":""}>${t("dateRejeu")}</option><option value="" ${dateChoisie?"":"selected"}>${t("dateDirect")}</option></select></label><br>
+ <button class="lancer" onclick="lancerAgent()" ${enCours?"disabled":""}>${enCours?t("enCours")+"…":t("lancer")}</button>
+ <p class="petit">${enCours&&dernier?t("dernier")+": "+echapper(dernier.outil):t("lancerNote")}</p>
+ ${erreurAgent?`<div class="erreur"><strong>${t("echec")}.</strong> ${echapper(erreurAgent)}</div>`:""}</section>`;
+}
+function majZones(){zonesChoisies=[...document.querySelectorAll(".commande .choix input:checked")].map(c=>c.value)}
+async function lancerAgent(){
+ majZones();if(!zonesChoisies.length||enCours)return;
+ erreurAgent=null;
+ try{
+  const r=await fetch("api/lancer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({zones:zonesChoisies,date:dateChoisie})});
+  if(!r.ok){erreurAgent=(await r.json().catch(()=>({}))).erreur||("HTTP "+r.status);rendre();return}
+ }catch(e){erreurAgent=String(e);rendre();return}
+ enCours=true;source="vivant";zoneChat=0;signature="";
+ journal={meta:{date:dateChoisie||null,rejeu:!!dateChoisie},trace:[],resume:""};
+ rendre();sonder();
+}
+function sonder(){
+ clearInterval(minuterie);
+ minuterie=setInterval(async()=>{
+  try{
+   const e=await (await fetch("api/etat",{cache:"no-store"})).json();
+   const nouvelle=e.trace.length+"|"+e.statut+"|"+(e.erreur||"");
+   enCours=e.statut==="en_cours";erreurAgent=e.erreur;
+   if(nouvelle!==signature){signature=nouvelle;journal={meta:e.meta,trace:e.trace,resume:e.resume};rendre()}
+   if(!enCours)clearInterval(minuterie);
+  }catch(x){}
+ },800);
+}
+async function verifierApi(){
+ try{const r=await fetch("api/etat",{cache:"no-store"});if(!r.ok)return;apiDispo=true;
+  const e=await r.json();if(e.statut==="en_cours"){enCours=true;source="vivant";sonder()}}catch(x){}
+}
+// Au chargement : journal.json s'il existe (serveur), sinon l'exécution d'exemple intégrée ; puis détection du serveur.
+fetch("journal.json",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{if(j&&j.trace&&j.trace.length){journal=j;source="reel"}}).catch(()=>{}).then(verifierApi).finally(rendre);
+</script>
+</body>
+</html>
