@@ -9,4 +9,11 @@ Only two things existed before 26 October 2026. Neither is part of the hackathon
 
 ## New work (26 Oct – 4 Nov 2026)
 
-All code in this repository: data ingestion, risk model, Muse Spark agent and tools, SAM 3.1 vision module, alert generation, demo interface. The commit history is the evidence.
+All implementation in this repository was created for the Meta hackathon:
+data ingestion, the regional risk model, Muse Spark agent and tools, SAM 3.1
+vision integration, alert generation, execution journaling and the local demo
+interface. The public commit history records this work.
+
+The prior ATUT notebook is not used as training data, code or a baseline
+implementation here. The current model is trained from the Open-Meteo
+historical series described in the README and [docs/VALIDATION.md](docs/VALIDATION.md).

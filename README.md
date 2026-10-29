@@ -1,184 +1,129 @@
 # Eauracle
 
-**Eauracle** is an agentic early-warning prototype for flood risk in the Ouémé basin (Benin).  
-Built for the **Meta Global AI Developer Hackathon (Indie track)**.
+> **An agentic early-warning prototype that turns Ouémé flood signals and local photos into cautious, human-reviewed alerts.**
 
-The system combines:
-- hydrometeorological signals (river discharge + rainfall),
-- a calibrated risk model (LightGBM),
-- an LLM agent with tool calling (Muse Spark),
-- image-based flood verification (SAM 3.1 + Muse vision),
-- simulated alert drafting and delivery in French.
+[![Open the local dashboard](https://img.shields.io/badge/demo-local%20dashboard-0f766e)](app/index.html)
 
----
+![Eauracle dashboard preview](docs/demo-dashboard.png)
 
-## 1) What the agent does
+**Demo video:** [Watch the 3-minute demo](VIDEO_LINK_TO_ADD)
 
-For each monitored zone, the agent follows this flow:
-1. Compute flood risk (`get_flood_risk`).
-2. If risk is low: continue monitoring and log decision.
-3. If risk is medium/high: request local photos (`request_photos`), analyze flood severity (`analyze_flood_photo`).
-4. Draft a short actionable alert (`draft_alert`) with level:
-   - `vigilance`
-   - `alerte`
-   - `urgence` (only if confirmed by photo or ongoing flood condition)
-5. Send alert in **simulated mode** (`send_alert`) and log rationale (`log_decision`).
+Eauracle monitors five zones in the Ouémé basin in Benin. A risk model
+provides a signal; **Muse Spark Open** decides which tools to call; **SAM 3.1**
+measures visible water on a received photo; and the system drafts a French
+alert. Alert delivery is simulated and must be validated by a local authority.
 
-All alerts are demo drafts and should be human-validated by local authorities before real-world use.
+## What the demo shows
 
----
+1. Low risk: monitor and log the decision.
+2. Medium/high risk: request a local photo and analyze it.
+3. Combine the model signal and visual evidence.
+4. Draft a short action-oriented alert and record the reasoning.
 
-## 2) Data sources and monitored zones
+The interface supports English/French display, historical replay and current
+data. It is a local demo, not a public emergency service.
 
-### Sources
-- **River discharge**: Open-Meteo Flood API (GloFAS model)  
-  ⚠️ Simulated/modelled discharge, not gauge station measurements.
-- **Rainfall (live mode)**: Open-Meteo Forecast API.
-- **Rainfall (historical training)**: Open-Meteo Archive API (ERA5 reanalysis).
+## How this maps to the judging criteria
 
-### Monitored zones (Ouémé basin)
-- Betérou (9.10, 2.26)
-- Bonou (6.83, 2.45)
-- Adjohoun (6.60, 2.48)
-- Dangbo (6.50, 2.48)
-- Porto-Novo (6.44, 2.73)
+| Criterion | What to look at |
+|---|---|
+| **Impact** | The Ouémé flood-warning problem, human validation boundary and honest limitations in this README; the end-to-end scenario in the video. |
+| **Creative use of Meta tools** | Muse Spark tool selection and alert drafting in [agent/boucle.py](agent/boucle.py) and [agent/outils.py](agent/outils.py); water measurement with SAM 3.1 in [vision/segmentation_sam.py](vision/segmentation_sam.py). |
+| **Demo quality** | The runnable dashboard and API in [app/index.html](app/index.html) and [app/serveur.py](app/serveur.py), including replay and English/French switching. |
+| **Technical execution** | Time-based LightGBM training, explicit fallback/error reporting, execution trace and the independent replay table in [docs/VALIDATION.md](docs/VALIDATION.md). |
 
-`Savè` was removed from active monitoring because no valid river cell was found in calibration.
+## What is new vs. prior work
 
-### Known data gap
-- In local checks, **Bonou discharge contains missing values from 1984 to 1996** in the downloaded historical series.  
-  As a result, effective model training for that zone starts later (roughly from 1997).
+Only the Eauracle concept existed before the hackathon. The earlier ATUT
+notebook used a synthetic Kaggle dataset and is not copied or reused here.
+The implementation in this repository was built during the hackathon:
+ingestion, regional risk model, agent tools, execution journal, Muse
+integration, SAM 3.1 integration, simulated alerts and dashboard.
 
----
+See [PRIOR_WORK.md](PRIOR_WORK.md) for the precise boundary.
 
-## 3) Project structure
+## Models and providers
 
-- `data/`
-  - `ingestion.py`: live discharge/rain retrieval by zone
-  - `historique.py`: historical cache builder (1984 -> today-7d)
-  - `calibrer_zones.py`: calibration helper (not part of normal run)
-- `risk_model/`
-  - `caracteristiques.py`: feature engineering + prediction target horizon
-  - `entrainer.py`: LightGBM training / validation / test and thresholds
-  - `inference.py`: live or replay risk inference
-  - `trouver_crues.py`: identify major flood peaks and replay candidates
-- `agent/`
-  - `client.py`: Baseten/Meta OpenAI-compatible client
-  - `outils.py`: all agent tools
-  - `boucle.py`: agent tool-calling loop
-  - `tester_connexion.py`: connectivity smoke test
-- `vision/`
-  - `segmentation_sam.py`: SAM 3.1 water segmentation
-  - `analyse_photo.py`: SAM + Muse vision fallback pipeline
-- `app/`, `alerts/`, `docs/`: demo interface/docs work in progress
+- **Muse Spark Open** (`meta-models/muse-spark-open-1026`, via Baseten by
+  default): agent reasoning, tool calling, alert drafting and image
+  description.
+- **SAM 3.1** (Meta Model API): segmentation of visible water and estimated
+  water coverage on local photos.
 
----
+The code uses OpenAI-compatible clients for Muse and the Meta Responses API
+for SAM. Keys are read from `.env` or environment variables and are never
+stored in the repository.
 
-## 4) Setup
+## Data
 
-### Requirements
-- Python 3.x
-- Internet access for APIs
-- API key(s) for at least one model provider
+- River discharge: Open-Meteo Flood API / GloFAS model (**simulated output,
+  not station measurements**).
+- Current rainfall: Open-Meteo Forecast API.
+- Historical rainfall: Open-Meteo Archive API / ERA5 reanalysis.
+- Zones: Betérou, Bonou, Adjohoun, Dangbo and Porto-Novo.
 
-Install dependencies:
+The historical cache has a known Bonou gap from 1984 to 1996. See the model
+validation and data notes in [docs/VALIDATION.md](docs/VALIDATION.md).
 
-```bash
-pip install -r requirements.txt
-```
+## Run locally
 
-### Environment variables
-
-Copy `.env.example` to `.env` and set your keys:
-
-```env
-BASETEN_API_KEY=...
-# META_API_KEY=...
-# EAURACLE_FOURNISSEUR=baseten
-# EAURACLE_MODELE=...
-```
-
-Supported providers in `agent/client.py`:
-- `baseten` (default): `meta-models/muse-spark-open-1026`
-- `meta`: `muse-spark-1.1`
-
----
-
-## 5) Quick start
-
-From repository root:
-
-```bash
-python agent/tester_connexion.py
-python data/historique.py
-```
-
-Set training configuration (PowerShell example):
+From the repository root, with Python 3.x and internet access:
 
 ```powershell
+pip install -r requirements.txt
+Copy-Item .env.example .env
+# Edit .env and add BASETEN_API_KEY (or configure the Meta provider).
+python data/historique.py
 $env:EAURACLE_CENTILE = "0.90"
 $env:EAURACLE_HORIZON = "5"
-```
-
-Train risk model:
-
-```bash
 python risk_model/entrainer.py
+python app/serveur.py
 ```
 
-Find replay dates for major floods:
+Open <http://localhost:8000>. The dashboard calls the real local agent through
+`POST /api/lancer`. For a deterministic historical run without the UI:
 
-```bash
-python risk_model/trouver_crues.py Bonou
-```
-
-Run agent in historical replay mode:
-
-```bash
+```powershell
 python agent/boucle.py Bonou Porto-Novo --rejeu 2002-08-04
 ```
 
-Run agent in live mode:
+The replay uses local cache data and local photos under `app/photos/`. Photos,
+the execution journal and generated model files are intentionally ignored by
+Git. See [docs/PHOTO_SOURCES.md](docs/PHOTO_SOURCES.md) before using any image
+publicly.
 
-```bash
-python agent/boucle.py Bonou Porto-Novo
-```
+## Validation and limitations
 
----
+The model predicts flood onset within a configurable horizon while simulated
+discharge is below the zone threshold. Train/validation/test years are
+`<=2016`, `2017-2019`, and `>=2020`. The test snapshot is:
 
-## 6) Model objective and reported metrics
+- AUC: **0.962** vs **0.960** for the naive discharge-relative baseline
+- Average precision: **0.361** vs **0.310** for the naive baseline
+- 210 test flood-onset positives
 
-### Objective
-Predict **flood onset within the next N days** (default horizon from `EAURACLE_HORIZON`) while the river is still below its flood threshold.
+The replay table in [docs/VALIDATION.md](docs/VALIDATION.md) includes the
+2017 miss explicitly. The model is a signal among other evidence, not an
+autonomous decision-maker.
 
-### Training split
-- Train: years <= 2016
-- Validation: 2017-2019
-- Test: >= 2020
+Required honesty boundaries:
 
-### Reported test snapshot (from local project recap)
-- AUC: **0.962**
-- Naive baseline AUC (relative discharge only): **0.960**
-- Average precision: **0.361**
-- Naive baseline average precision: **0.310**
-- Number of flood-onset positives in test: **210**
+- GloFAS discharge is modelled/simulated, not a station measurement.
+- Resident responses and alert delivery are simulated.
+- Alerts are drafts for local-authority validation; no real emergency channel
+  is connected.
+- SAM water-coverage severity thresholds are heuristics, not a safety standard.
+- If SAM fails, the result says so and the pipeline falls back to Muse vision
+  estimation; it must not claim segmentation succeeded.
+- The repository does not promise local-language support, voice input or
+  real-world alert dispatch because those features are not implemented.
 
-Interpretation: useful signal, but only a modest gain versus baseline; agent decisions also rely on rainfall trends and photo evidence.
+## Repository map
 
----
-
-## 7) Honesty and safety notes
-
-- Discharge comes from a simulation model (GloFAS), not station measurements.
-- Alert sending is simulated (`envoye_simule`), not connected to real emergency channels.
-- Local relay photos in the demo are illustrative; verify rights before public reuse.
-- SAM severity thresholds (10% / 30% water coverage) are heuristic and should be calibrated.
-- If SAM fails, the pipeline falls back to Muse vision estimation and explicitly states the method.
-- This prototype supports decision assistance, not autonomous civil-protection action.
-
----
-
-## 8) What is new vs prior work
-
-See [PRIOR_WORK.md](PRIOR_WORK.md).  
-In summary: only the concept existed before the hackathon; this repository’s implementation is new work.
+- `data/`: live ingestion and historical cache builder
+- `risk_model/`: features, training, inference and replay inspection
+- `agent/`: Muse client, tools, loop and execution journal
+- `vision/`: Muse image analysis and SAM 3.1 segmentation
+- `app/`: local dashboard and HTTP server
+- `docs/`: [architecture](docs/ARCHITECTURE.md), [validation](docs/VALIDATION.md)
+  and [photo rights](docs/PHOTO_SOURCES.md)
